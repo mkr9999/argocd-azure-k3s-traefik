@@ -92,7 +92,7 @@ roleRef:
   name: helm-operator
 subjects:
   - name: helm-operator
-    namespace: "default"
+    namespace: helm-operator
     kind: ServiceAccount
 ---
 # Source: helm-operator/templates/service.yaml
