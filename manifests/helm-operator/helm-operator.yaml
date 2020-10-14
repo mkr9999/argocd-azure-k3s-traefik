@@ -3,18 +3,18 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: RELEASE-NAME-helm-operator
+  name: helm-operator
   labels:
     app: helm-operator
     chart: helm-operator-1.2.0
-    release: RELEASE-NAME
+    release: helm-operator
     heritage: Helm
 ---
 # Source: helm-operator/templates/git-secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: RELEASE-NAME-helm-operator-git-deploy
+  name: helm-operator-git-deploy
 type: Opaque
 ---
 # Source: helm-operator/templates/helm-repositories.yaml
@@ -30,7 +30,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: RELEASE-NAME-helm-operator-kube-config
+  name: helm-operator-kube-config
 data:
   config: |
     apiVersion: v1
@@ -50,11 +50,11 @@ data:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: RELEASE-NAME-helm-operator
+  name: helm-operator
   labels:
     app: helm-operator
     chart: helm-operator-1.2.0
-    release: RELEASE-NAME
+    release: helm-operator
     heritage: Helm
 rules:
   - apiGroups:
@@ -72,18 +72,18 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: RELEASE-NAME-helm-operator
+  name: helm-operator
   labels:
     app: helm-operator
     chart: helm-operator-1.2.0
-    release: RELEASE-NAME
+    release: helm-operator
     heritage: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: RELEASE-NAME-helm-operator
+  name: helm-operator
 subjects:
-  - name: RELEASE-NAME-helm-operator
+  - name: helm-operator
     namespace: "default"
     kind: ServiceAccount
 ---
@@ -91,11 +91,11 @@ subjects:
 apiVersion: v1
 kind: Service
 metadata:
-  name: RELEASE-NAME-helm-operator
+  name: helm-operator
   labels:
     app: helm-operator
     chart: helm-operator-1.2.0
-    release: RELEASE-NAME
+    release: helm-operator
     heritage: Helm
 spec:
   type: ClusterIP
@@ -106,24 +106,24 @@ spec:
       name: http
   selector:
     app: helm-operator
-    release: RELEASE-NAME
+    release: helm-operator
 ---
 # Source: helm-operator/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: RELEASE-NAME-helm-operator
+  name: helm-operator
   labels:
     app: helm-operator
     chart: helm-operator-1.2.0
-    release: RELEASE-NAME
+    release: helm-operator
     heritage: Helm
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: helm-operator
-      release: RELEASE-NAME
+      release: helm-operator
   strategy:
     type:  Recreate
   template:
@@ -132,17 +132,17 @@ spec:
         checksum/repositories: "68d4b285396f84cd7ea74a58d053a6779fdafc6071e04ee7da6166fe2dfbceb7"
       labels:
         app: helm-operator
-        release: RELEASE-NAME
+        release: helm-operator
     spec:
-      serviceAccountName: RELEASE-NAME-helm-operator
+      serviceAccountName: helm-operator
       volumes:
       - name: config
         configMap:
-          name: RELEASE-NAME-helm-operator-kube-config
+          name: helm-operator-kube-config
           defaultMode: 0600
       - name: git-key
         secret:
-          secretName: RELEASE-NAME-helm-operator-git-deploy
+          secretName: helm-operator-git-deploy
           defaultMode: 0400
       - name: "repositories-yaml"
         secret:
