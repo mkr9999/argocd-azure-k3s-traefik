@@ -1,0 +1,24 @@
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  name: nginx-ingress
+  namespace: ingress
+spec:
+  releaseName: nginx-ingress
+  chart:
+    repository: https://kubernetes-charts.storage.googleapis.com/
+    name: nginx-ingress
+    version: 1.36.0
+  values:
+    controller:
+      kind: DaemonSet	
+      service:
+        type: "NodePort"
+        nodePorts:
+          http: "31125"
+          https: "30984"
+      metrics:
+        enabled: true
+      stats:
+        enabled: true
