@@ -1,0 +1,207 @@
+---
+# Source: helm-operator/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: RELEASE-NAME-helm-operator
+  labels:
+    app: helm-operator
+    chart: helm-operator-1.2.0
+    release: RELEASE-NAME
+    heritage: Helm
+---
+# Source: helm-operator/templates/git-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: RELEASE-NAME-helm-operator-git-deploy
+type: Opaque
+---
+# Source: helm-operator/templates/helm-repositories.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flux-helm-repositories
+type: Opaque
+data:
+  repositories.yaml: YXBpVmVyc2lvbjogdjEKZ2VuZXJhdGVkOiAwMDAxLTAxLTAxVDAwOjAwOjAwWgpyZXBvc2l0b3JpZXM6Ci0gbmFtZTogc3RhYmxlCiAgdXJsOiBodHRwczovL2t1YmVybmV0ZXMtY2hhcnRzLnN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20KICBjYWNoZTogL3Zhci9mbHV4ZC9oZWxtL3JlcG9zaXRvcnkvY2FjaGUvc3RhYmxlLWluZGV4LnlhbWwKICBjYUZpbGU6ICIiCiAgY2VydEZpbGU6ICIiCiAga2V5RmlsZTogIiIKICBwYXNzd29yZDogIiIKICB1c2VybmFtZTogIiI=
+---
+# Source: helm-operator/templates/kube.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: RELEASE-NAME-helm-operator-kube-config
+data:
+  config: |
+    apiVersion: v1
+    clusters: []
+    contexts:
+    - context:
+        cluster: ""
+        namespace: default
+        user: ""
+      name: default
+    current-context: default
+    kind: Config
+    preferences: {}
+    users: []
+---
+# Source: helm-operator/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: RELEASE-NAME-helm-operator
+  labels:
+    app: helm-operator
+    chart: helm-operator-1.2.0
+    release: RELEASE-NAME
+    heritage: Helm
+rules:
+  - apiGroups:
+      - '*'
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - nonResourceURLs:
+      - '*'
+    verbs:
+      - '*'
+---
+# Source: helm-operator/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: RELEASE-NAME-helm-operator
+  labels:
+    app: helm-operator
+    chart: helm-operator-1.2.0
+    release: RELEASE-NAME
+    heritage: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: RELEASE-NAME-helm-operator
+subjects:
+  - name: RELEASE-NAME-helm-operator
+    namespace: "default"
+    kind: ServiceAccount
+---
+# Source: helm-operator/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: RELEASE-NAME-helm-operator
+  labels:
+    app: helm-operator
+    chart: helm-operator-1.2.0
+    release: RELEASE-NAME
+    heritage: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3030
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: helm-operator
+    release: RELEASE-NAME
+---
+# Source: helm-operator/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: RELEASE-NAME-helm-operator
+  labels:
+    app: helm-operator
+    chart: helm-operator-1.2.0
+    release: RELEASE-NAME
+    heritage: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helm-operator
+      release: RELEASE-NAME
+  strategy:
+    type:  Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/repositories: "68d4b285396f84cd7ea74a58d053a6779fdafc6071e04ee7da6166fe2dfbceb7"
+      labels:
+        app: helm-operator
+        release: RELEASE-NAME
+    spec:
+      serviceAccountName: RELEASE-NAME-helm-operator
+      volumes:
+      - name: config
+        configMap:
+          name: RELEASE-NAME-helm-operator-kube-config
+          defaultMode: 0600
+      - name: git-key
+        secret:
+          secretName: RELEASE-NAME-helm-operator-git-deploy
+          defaultMode: 0400
+      - name: "repositories-yaml"
+        secret:
+          secretName: "flux-helm-repositories"
+      - name: "repositories-cache"
+        emptyDir: {}
+      containers:
+      - name: flux-helm-operator
+        image: "docker.io/fluxcd/helm-operator:1.2.0"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3030
+        livenessProbe:
+          httpGet:
+            port: 3030
+            path: /healthz
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            port: 3030
+            path: /healthz
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        volumeMounts:
+        - name: config
+          mountPath: /root/.kube
+          readOnly: true
+        - name: git-key
+          mountPath: /etc/fluxd/ssh
+          readOnly: true
+        - name: "repositories-yaml"
+          mountPath: /root/.helm/repository/repositories.yaml
+          subPath: repositories.yaml
+          readOnly: true
+        - name: "repositories-cache"
+          mountPath: /root/.cache/helm/repository
+          subPath: v3
+        args:
+        - --enabled-helm-versions=v3
+        - --helm-repository-import=v3:/root/.helm/repository/repositories.yaml
+        - --kubeconfig=/root/.kube/config
+        - --log-format=fmt
+        - --git-timeout=20s
+        - --git-poll-interval=5m
+        - --charts-sync-interval=3m
+        - --status-update-interval=30s
+        - --update-chart-deps=true
+        - --log-release-diffs=false
+        - --workers=4
+        - --tiller-namespace=kube-system
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
