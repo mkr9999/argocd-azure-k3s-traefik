@@ -1,6 +1,9 @@
 #!/bin/bash
 
-PASSWORD=${1:-"verysecurepassword"}
+DNS_NAME=${1:-argocds}
+REGION=${2:-westeurope}
+
+PASSWORD=${3:-"verysecurepassword"}
 BCRYPT_PASSWORD=`htpasswd -bnBC 10 "" $PASSWORD | tr -d ':\n'`
 
 export KUBECONFIG=./config
@@ -13,7 +16,7 @@ echo "Patching ArgoCD to disable SSL and use the latest image"
 kubectl patch -n argocd deployment/argocd-server --patch "$(cat patch.yaml)"
 
 echo "Creating the IngressRoute for ArgoCD.."
-sed "s/DNS_NAME.REGION/${DNS_NAME}.${REGION}.cloudapp.azure.com/g" ingressroute-argo-template.yaml > ingressroute-argo.yaml
+sed "s/DNS_NAME.REGION/${DNS_NAME}.${REGION}/g" ingressroute-argo-template.yaml > ingressroute-argo.yaml
 kubectl apply -f ingressroute-argo.yaml
 rm ingressroute-argo.yaml
 echo "..done!"
@@ -29,6 +32,9 @@ kubectl get secret -n argocd argocd-secret -o json \
 echo "..done"
 
 #you'll need the argocd binary from https://github.com/argoproj/argo-cd/releases/download/
+echo "Let ArgoCD deployment complete.."
+sleep 30
+echo "..done"
 
 echo "Logging in argo.."
 argocd login --username admin --password ${PASSWORD} ${DNS_NAME}.${REGION}.cloudapp.azure.com

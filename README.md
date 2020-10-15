@@ -4,5 +4,5 @@
 ```bash
 ./deploy.sh <rg> <dns_name> <location> <size>
 ./install-traefik.sh <email>
-./install-argo.sh <dns_name> <password>
+./install-argo.sh <dns_name> <region> <password>
 ```

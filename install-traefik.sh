@@ -15,7 +15,8 @@ helm upgrade --install \
 --create-namespace -n ingress \
 --set rbac.enabled=true \
 --set metrics.prometheus.enabled=true \
---set="additionalArguments={--certificatesresolvers.default.acme.httpChallenge.entryPoint=web,--certificatesresolvers.default.acme.storage=/data/acme.json,--certificatesresolvers.default.acme.email=${EMAIL},--certificatesresolvers.default.acme.httpChallenge=true,--providers.kubernetesingress.ingressclass=traefik,--log.level=DEBUG}" traefik traefik/traefik
+--set="additionalArguments={--certificatesresolvers.default.acme.httpChallenge.entryPoint=web,--certificatesresolvers.default.acme.storage=/data/acme.json,--certificatesresolvers.default.acme.email=${EMAIL},--certificatesresolvers.default.acme.httpChallenge=true,--providers.kubernetescrd,--log.level=DEBUG}" \
+traefik traefik/traefik
 
 echo "To acces the dashboard, run:"
 echo 'kubectl port-forward -n ingress $(kubectl get pods -n ingress --selector "app.kubernetes.io/name=traefik" --output=name) 9000:9000'

@@ -1,0 +1,16 @@
+project: default
+source:
+  repoURL: 'https://github.com/ams0/argocd-azure-k3s-traefik/'
+  path: manifests/
+  targetRevision: HEAD
+  directory:
+    recurse: true
+    jsonnet: {}
+destination:
+  namespace: app
+  name: playme
+syncPolicy:
+  automated:
+    selfHeal: true
+  syncOptions:
+    - CreateNamespace=true

@@ -3,15 +3,16 @@
 #usage: ./deploy.sh <rg> <dns_name> <location> <size>
 
 RG=${1:-k3s}
-DNS_NAME=${2:-argocdx}
+DNS_NAME=${2:-argocds}
 REGION=${3:-westeurope}
+SIZE=${4:-Standard_B8ms}
 
 echo "Creating a Resource group.."
 az group create -n $RG
 echo "..done!"
 
 echo "Creating the k3s VM.."
-az vm create -g $RG --image UbuntuLTS --size Standard_B8ms --admin-username ubuntu --ssh-key-values ~/.ssh/id_rsa.pub -n $RG --public-ip-address-dns-name $DNS_NAME --custom-data install-k3d.sh -l ${REGION}
+az vm create -g $RG --image UbuntuLTS --size $SIZE --admin-username ubuntu --ssh-key-values ~/.ssh/id_rsa.pub -n $RG --public-ip-address-dns-name $DNS_NAME --custom-data install-k3d.sh -l ${REGION}
 echo "..done!"
 
 az network nsg rule create -g $RG --nsg-name ${RG}NSG --priority 1001 --access Allow --protocol Tcp --destination-port-ranges 443 -n https
